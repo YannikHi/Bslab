@@ -16,7 +16,7 @@
 #define SMALL_SIZE 1024
 #define LARGE_SIZE 20*1024*1024
 
-TEST_CASE("T-1.01", "Part_1") {
+TEST_CASE("T-1.01", "[Part_1]") {
     printf("Testcase 1.1: Create & remove a single file\n");
 
     int fd;
@@ -45,7 +45,7 @@ TEST_CASE("T-1.01", "Part_1") {
     REQUIRE(open(FILENAME, O_EXCL | O_RDWR, 0666) < 0);
 }
 
-TEST_CASE("T-1.02", "Part_1") {
+TEST_CASE("T-1.02", "[Part_1]") {
     printf("Testcase 1.2: Write and read a file\n");
 
     int fd;
@@ -85,7 +85,7 @@ TEST_CASE("T-1.02", "Part_1") {
     REQUIRE(unlink(FILENAME) >= 0);
 }
 
-TEST_CASE("T-1.03", "Part_1") {
+TEST_CASE("T-1.03", "[Part_1]") {
     printf("Testcase 1.3: Overwrite a part of a file\n");
 
     const char *buf1= "abcde";
@@ -137,7 +137,7 @@ TEST_CASE("T-1.03", "Part_1") {
     delete [] buf4;
 }
 
-TEST_CASE("T-1.06", "Part_1") {
+TEST_CASE("T-1.06", "[Part_1]") {
     printf("Testcase 1.6: Append before the end of a file\n");
     const char *buf1= "abcde";
     const char *buf2= "xyz";
@@ -188,7 +188,7 @@ TEST_CASE("T-1.06", "Part_1") {
     delete [] buf4;
 }
 
-TEST_CASE("T-1.04", "Part_1") {
+TEST_CASE("T-1.04", "[Part_1]") {
     printf("Testcase 1.4: Append at the end of a file\n");
 
     const char *buf1= "abcde";
@@ -240,7 +240,7 @@ TEST_CASE("T-1.04", "Part_1") {
     delete [] buf4;
 }
 
-TEST_CASE("T-1.05", "Part_1") {
+TEST_CASE("T-1.05", "[Part_1]") {
     printf("Testcase 1.5: Append beyond the end of a file\n");
     const char *buf1= "abcde";
     const char *buf2= "xyz";
@@ -293,7 +293,7 @@ TEST_CASE("T-1.05", "Part_1") {
     delete [] buf4;
 }
 
-TEST_CASE("T-1.07", "Part_1") {
+TEST_CASE("T-1.07", "[Part_1]") {
     printf("Testcase 1.7: Truncate a file\n");
 
     int fd;
@@ -347,7 +347,7 @@ TEST_CASE("T-1.07", "Part_1") {
     delete [] w;
 }
 
-TEST_CASE("T-1.08", "Part_1") {
+TEST_CASE("T-1.08", "[Part_1]") {
     printf("Testcase 1.8: Change mode of a file\n");
 
     int fd;
@@ -377,7 +377,7 @@ TEST_CASE("T-1.08", "Part_1") {
     REQUIRE(unlink(FILENAME) >= 0);
 }
 
-TEST_CASE("T-1.09", "Part_1") {
+TEST_CASE("T-1.09", "[Part_1]") {
     printf("Testcase 1.9: Write to multiple files\n");
 
     int fileSize= SMALL_SIZE;
@@ -450,7 +450,7 @@ TEST_CASE("T-1.09", "Part_1") {
     delete [] w;
 }
 
-TEST_CASE("T-1.10", "Part_1") {
+TEST_CASE("T-1.10", "[Part_1]") {
     printf("Testcase 1.10: Write a very large file\n");
     int fd;
 
