@@ -17,6 +17,7 @@
 class MyInMemoryFS : public MyFS {
 protected:
     // BlockDevice blockDevice;
+    MyFsFileInfo allMyfiles[NUM_DIR_ENTRIES];
 
 public:
     static MyInMemoryFS *Instance();
@@ -47,6 +48,8 @@ public:
     virtual void fuseDestroy();
 
     // TODO: Add methods of your file system here
+    int findIndex(const char *path);
+    int findFreeSpot();
 
 };
 

@@ -137,20 +137,41 @@ int MyInMemoryFS::fuseGetattr(const char *path, struct stat *statbuf) {
     statbuf->st_mtime = time( NULL ); // The last "m"odification of the file/directory is right now
 
     int ret= 0;
+    int t = findIndex(path);
 
     if ( strcmp( path, "/" ) == 0 )
     {
         statbuf->st_mode = S_IFDIR | 0755;
         statbuf->st_nlink = 2; // Why "two" hardlinks instead of "one"? The answer is here: http://unix.stackexchange.com/a/101536
     }
-    else if ( strcmp( path, "/file54" ) == 0 || ( strcmp( path, "/file349" ) == 0 ) )
-    {
-        statbuf->st_mode = S_IFREG | 0644;
+//  else if ( strcmp( path, "/file54" ) == 0 || ( strcmp( path, "/file349" ) == 0 ) )
+//  {
+//      statbuf->st_mode = S_IFREG | 0644;
+//      statbuf->st_nlink = 1;
+//      statbuf->st_size = 1024;
+//  }
+    else if ( strcmp( path+1, allMyfiles[t].name ) == 0) {
         statbuf->st_nlink = 1;
-        statbuf->st_size = 1024;
+        statbuf->st_mode = allMyfiles[t].st_mode;
+        statbuf->st_size = allMyfiles[t].st_size;
+        //statbuf->st_gid = allMyfiles[t].st_gid;
+        //statbuf->st_uid = allMyfiles[t].st_uid;
+        //statbuf->st_atime = allMyfiles[t].t_atime;
+        //statbuf->st_mtime = allMyfiles[t].t_mtime;
+        //statbuf->st_ctime = allMyfiles[t].t_ctime;
     }
-    else
+    else {
         ret= -ENOENT;
+    }
+
+    /* for (int t = 0; t <= NUM_DIR_ENTRIES; t++) {
+        LOG("HALLO VON UNSEREM MIST");
+        if ( strcmp(path+1, allMyfiles[t].name ) == 0 ){
+    statbuf->st_mode = S_IFREG | 0644;
+    statbuf->st_nlink = 1;
+    statbuf->st_size = 1024;
+    }
+    } */
 
     RETURN(ret);
 }
@@ -198,8 +219,20 @@ int MyInMemoryFS::fuseOpen(const char *path, struct fuse_file_info *fileInfo) {
     LOGM();
 
     // TODO: [PART 1] Implement this!
+    int t = findIndex(path);
 
-    RETURN(0);
+    if (t != -2) {
+        if(allMyfiles[t].st_size - (offset) < size){
+            memcpy( buf, allMyfiles[t].data + offset, allMyfiles[t].st_size - offset );
+            RETURN((int) (allMyfiles[t].st_size - offset));
+        } else {
+            memcpy( buf, allMyfiles[t].data + offset, size);
+            offset = size;
+            RETURN((int) size);
+        }
+    } else {
+        return -ENOENT;
+    }
 }
 
 /// @brief Read from a file.
@@ -224,26 +257,63 @@ int MyInMemoryFS::fuseRead(const char *path, char *buf, size_t size, off_t offse
 
     // TODO: [PART 1] Implement this!
 
-    LOGF( "--> Trying to read %s, %lu, %lu\n", path, (unsigned long) offset, size );
+//  LOGF( "--> Trying to read %s, %lu, %lu\n", path, (unsigned long) offset, size );
+//  char file54Text[] = "Hello World From File54!\n";
+//  char file349Text[] = "Hello World From File349!\n";
+//  char *selectedText = NULL;
+//
+//  // ... //
+//
+//  if ( strcmp( path, "/file54" ) == 0 )
+//      selectedText = file54Text;
+//  else if ( strcmp( path, "/file349" ) == 0 )
+//      selectedText = file349Text;
+//  else
+//      return -ENOENT;
+//
+//  // ... //
+//
+//  memcpy( buf, selectedText + offset, size );
+//
+//  RETURN((int) (strlen( selectedText ) - offset));
 
-    char file54Text[] = "Hello World From File54!\n";
-    char file349Text[] = "Hello World From File349!\n";
-    char *selectedText = NULL;
+    if (findIndex(path) != -2) {
+        int i = findIndex(path);
+        size_t fileSize = allMyfiles[i].st_size;
 
-    // ... //
+        if (fileSize == 0) {                                         // Datei vorher leer
+            allMyfiles[i].st_size = size;
+            allMyfiles[i].data = (char *) (malloc(offset + size));
+            memcpy(allMyfiles[i].data + offset, buf, size);
 
-    if ( strcmp( path, "/file54" ) == 0 )
-        selectedText = file54Text;
-    else if ( strcmp( path, "/file349" ) == 0 )
-        selectedText = file349Text;
-    else
-        return -ENOENT;
+        } else if ((unsigned) offset == fileSize) {                             // text genau ans Ende der Datei gehängt
+            allMyfiles[i].st_size = (fileSize + size);
+            allMyfiles[i].data = (char *) realloc(allMyfiles[i].data, size + fileSize);
+            memcpy(allMyfiles[i].data + offset, buf, size);
 
-    // ... //
+        } else if ((unsigned) offset > fileSize) {                            // text hinter eigentlichem Ende der Datei angehängt
+            allMyfiles[i].st_size = (offset + size);
+            allMyfiles[i].data = (char *) realloc(allMyfiles[i].data, offset + size);
+            memcpy(allMyfiles[i].data + offset, buf, size);
 
-    memcpy( buf, selectedText + offset, size );
+        } else if((offset + size) < allMyfiles[i].st_size){
+            memcpy(allMyfiles[i].data + offset, buf, size);
 
-    RETURN((int) (strlen( selectedText ) - offset));
+        } else {                // überschneidung und text geht über vorheriges Ende hinaus
+
+            allMyfiles[i].st_size = (offset + size);
+            allMyfiles[i].data = (char *) realloc(allMyfiles[i].data, offset + size - fileSize);
+            memcpy(allMyfiles[i].data + offset, buf, size);
+        }
+
+        LOGF("Größe ist: %i", (unsigned) allMyfiles[i].st_size);
+        allMyfiles[i].t_mtime = time(NULL);
+
+        RETURN((unsigned) size);
+    } else {
+        LOG("SHIT DA KLAPPT WAT NIKT");
+        RETURN(-2);
+    }
 }
 
 /// @brief Write to a file.
@@ -265,6 +335,43 @@ int MyInMemoryFS::fuseWrite(const char *path, const char *buf, size_t size, off_
     LOGM();
 
     // TODO: [PART 1] Implement this!
+    if (findIndex(path) != -2) {
+        int i = findIndex(path);
+        size_t fileSize = allMyfiles[i].st_size;
+
+        if (fileSize == 0) {                                         // Datei vorher leer
+            allMyfiles[i].st_size = size;
+            allMyfiles[i].data = (char *) (malloc(offset + size));
+            memcpy(allMyfiles[i].data + offset, buf, size);
+
+        } else if ((unsigned) offset == fileSize) {                             // text genau ans Ende der Datei gehängt
+            allMyfiles[i].st_size = (fileSize + size);
+            allMyfiles[i].data = (char *) realloc(allMyfiles[i].data, size + fileSize);
+            memcpy(allMyfiles[i].data + offset, buf, size);
+
+        } else if ((unsigned) offset > fileSize) {                            // text hinter eigentlichem Ende der Datei angehängt
+            allMyfiles[i].st_size = (offset + size);
+            allMyfiles[i].data = (char *) realloc(allMyfiles[i].data, offset + size);
+            memcpy(allMyfiles[i].data + offset, buf, size);
+
+        } else if((offset + size) < allMyfiles[i].st_size){
+            memcpy(allMyfiles[i].data + offset, buf, size);
+
+        } else {                // überschneidung und text geht über vorheriges Ende hinaus
+
+            allMyfiles[i].st_size = (offset + size);
+            allMyfiles[i].data = (char *) realloc(allMyfiles[i].data, offset + size - fileSize);
+            memcpy(allMyfiles[i].data + offset, buf, size);
+        }
+
+        LOGF("Größe ist: %i", (unsigned) allMyfiles[i].st_size);
+        allMyfiles[i].t_mtime = time(NULL);
+
+        RETURN((unsigned) size);
+    } else {
+        LOG("SHIT DA KLAPPT WAT NIKT");
+        RETURN(-2);
+    }
 
     RETURN(0);
 }
@@ -295,6 +402,25 @@ int MyInMemoryFS::fuseTruncate(const char *path, off_t newSize) {
     LOGM();
 
     // TODO: [PART 1] Implement this!
+    int t = findIndex(path);
+
+    if (t != -2 && allMyfiles[t].data != NULL) {
+        if ((off_t) allMyfiles[t].st_size != newSize) {
+            char newFileData[newSize];
+            memcpy(newFileData, allMyfiles[t].data, newSize);
+            allMyfiles[t].data = NULL;
+            allMyfiles[t].st_size = newSize;
+            allMyfiles[t].data = (char *) realloc(allMyfiles[t].data, newSize);
+            memcpy(allMyfiles[t].data, newFileData, newSize);
+            LOG("Datei wurde angepasst");
+        }
+    } else if (t != -2 && allMyfiles[t].data == NULL) {
+        allMyfiles[t].st_size = newSize;
+        allMyfiles[t].data = (char *) (malloc(newSize));
+        LOG("Datei war davor NULL und wurde jetzt reserviert.");
+    } else {
+        RETURN(-ENOENT);
+    }
 
     return 0;
 }
@@ -339,8 +465,13 @@ int MyInMemoryFS::fuseReaddir(const char *path, void *buf, fuse_fill_dir_t fille
 
     if ( strcmp( path, "/" ) == 0 ) // If the user is trying to show the files/directories of the root directory show the following
     {
-        filler( buf, "file54", NULL, 0 );
-        filler( buf, "file349", NULL, 0 );
+//      filler( buf, "file54", NULL, 0 );
+//      filler( buf, "file349", NULL, 0 );
+        for (int t = 0; t < NUM_DIR_ENTRIES; t++) {
+            if (strcmp(allMyfiles[t].name, "\0" ) != 0) {
+                filler( buf, allMyfiles[t].name, NULL, 0 );
+            }
+        }
     }
 
     RETURN(0);
@@ -381,6 +512,30 @@ void MyInMemoryFS::fuseDestroy() {
 }
 
 // TODO: [PART 1] You may add your own additional methods here!
+
+int MyInMemoryFS::findIndex(const char *path) {
+    int ret = -2;
+
+    for (int t = 0; t <= NUM_DIR_ENTRIES; t++) {
+        if(strcmp(path+1, allMyfiles[t].name) ==0) {
+            ret = t;
+        }
+    }
+    return ret;
+}
+
+int MyInMemoryFS::findFreeSpot() {
+    int ret = -ENOSPC;
+
+    for (int t = 0; t < NUM_DIR_ENTRIES && t >= 0; t++) {
+        if(strcmp(allMyfiles[t].name, "\0" ) == 0) {
+            ret = t;
+            t = NUM_DIR_ENTRIES +1;
+        }
+    }
+    LOGF("findFreeSpot sagt: Freier Platz bei %i",ret);
+    return ret;
+}
 
 // DO NOT EDIT ANYTHING BELOW THIS LINE!!!
 
