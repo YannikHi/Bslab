@@ -219,20 +219,8 @@ int MyInMemoryFS::fuseOpen(const char *path, struct fuse_file_info *fileInfo) {
     LOGM();
 
     // TODO: [PART 1] Implement this!
-    int t = findIndex(path);
 
-    if (t != -2) {
-        if(allMyfiles[t].st_size - (offset) < size){
-            memcpy( buf, allMyfiles[t].data + offset, allMyfiles[t].st_size - offset );
-            RETURN((int) (allMyfiles[t].st_size - offset));
-        } else {
-            memcpy( buf, allMyfiles[t].data + offset, size);
-            offset = size;
-            RETURN((int) size);
-        }
-    } else {
-        return -ENOENT;
-    }
+    RETURN(0);
 }
 
 /// @brief Read from a file.
@@ -277,43 +265,21 @@ int MyInMemoryFS::fuseRead(const char *path, char *buf, size_t size, off_t offse
 //
 //  RETURN((int) (strlen( selectedText ) - offset));
 
-    if (findIndex(path) != -2) {
-        int i = findIndex(path);
-        size_t fileSize = allMyfiles[i].st_size;
+    int t = findIndex(path);
 
-        if (fileSize == 0) {                                         // Datei vorher leer
-            allMyfiles[i].st_size = size;
-            allMyfiles[i].data = (char *) (malloc(offset + size));
-            memcpy(allMyfiles[i].data + offset, buf, size);
-
-        } else if ((unsigned) offset == fileSize) {                             // text genau ans Ende der Datei gehängt
-            allMyfiles[i].st_size = (fileSize + size);
-            allMyfiles[i].data = (char *) realloc(allMyfiles[i].data, size + fileSize);
-            memcpy(allMyfiles[i].data + offset, buf, size);
-
-        } else if ((unsigned) offset > fileSize) {                            // text hinter eigentlichem Ende der Datei angehängt
-            allMyfiles[i].st_size = (offset + size);
-            allMyfiles[i].data = (char *) realloc(allMyfiles[i].data, offset + size);
-            memcpy(allMyfiles[i].data + offset, buf, size);
-
-        } else if((offset + size) < allMyfiles[i].st_size){
-            memcpy(allMyfiles[i].data + offset, buf, size);
-
-        } else {                // überschneidung und text geht über vorheriges Ende hinaus
-
-            allMyfiles[i].st_size = (offset + size);
-            allMyfiles[i].data = (char *) realloc(allMyfiles[i].data, offset + size - fileSize);
-            memcpy(allMyfiles[i].data + offset, buf, size);
+    // ... //
+    if (t != -2) {
+        if(allMyfiles[t].st_size - (offset) < size){
+            memcpy( buf, allMyfiles[t].data + offset, allMyfiles[t].st_size - offset );
+            RETURN((int) (allMyfiles[t].st_size - offset));
+        } else {
+            memcpy( buf, allMyfiles[t].data + offset, size);
+            offset = size;
+            RETURN((int) size);
         }
-
-        LOGF("Größe ist: %i", (unsigned) allMyfiles[i].st_size);
-        allMyfiles[i].t_mtime = time(NULL);
-
-        RETURN((unsigned) size);
-    } else {
-        LOG("SHIT DA KLAPPT WAT NIKT");
-        RETURN(-2);
     }
+    else
+        return -ENOENT;
 }
 
 /// @brief Write to a file.
