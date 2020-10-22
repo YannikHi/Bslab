@@ -211,7 +211,8 @@ int MyInMemoryFS::fuseGetattr(const char *path, struct stat *statbuf) {
 /// \return 0 on success, -ERRNO on failure.
 int MyInMemoryFS::fuseChmod(const char *path, mode_t mode) {
     LOGM();
-
+    int t = findIndex(path);
+    allMyfiles[t].st_mode = mode;
     // TODO: [PART 1] Implement this!
 
     RETURN(0);
