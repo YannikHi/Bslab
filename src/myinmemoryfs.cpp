@@ -69,11 +69,11 @@ MyInMemoryFS::~MyInMemoryFS() {
 int MyInMemoryFS::fuseMknod(const char *path, mode_t mode, dev_t dev) {
     LOGM();
     int ret = -ENOSPC;
-    if(findIndex(path) == -2) {
-        if(findFreeSpot() != -ENOSPC){
+    if (findIndex(path) == -2) {
+        if (findFreeSpot() != -ENOSPC) {
             int t = findFreeSpot();
-            LOGF("mkNod sagt: Freier Platz bei %i",t);
-            strcpy(allMyfiles[t].name, path+1);
+            LOGF("mkNod sagt: Freier Platz bei %i", t);
+            strcpy(allMyfiles[t].name, path + 1);
             allMyfiles[t].st_mode = mode;
             allMyfiles[t].t_ctime = dev;
             //allMyfiles[t].data = NULL;
@@ -95,9 +95,9 @@ int MyInMemoryFS::fuseUnlink(const char *path) {
 
     // TODO: Implement this!
 
-    if(findIndex(path) != -2 ) {
+    if (findIndex(path) != -2) {
         int t = findIndex(path);
-        strcpy(allMyfiles[t].name,"\0");
+        strcpy(allMyfiles[t].name, "\0");
         allMyfiles[t].st_size = 0;
         allMyfiles[t].st_mode = 0;
         allMyfiles[t].data = NULL;
@@ -108,7 +108,7 @@ int MyInMemoryFS::fuseUnlink(const char *path) {
         allMyfiles[t].t_mtime = 0;
         RETURN(0);
     } else {
-        return(ENOENT);
+        return (ENOENT);
     }
 }
 
@@ -140,7 +140,7 @@ int MyInMemoryFS::fuseGetattr(const char *path, struct stat *statbuf) {
 
     // TODO: [PART 1] Implement this!
 
-    LOGF( "\tAttributes of %s requested\n", path );
+    LOGF("\tAttributes of %s requested\n", path);
 
     // GNU's definitions of the attributes (http://www.gnu.org/software/libc/manual/html_node/Attribute-Meanings.html):
     // 		st_uid: 	The user ID of the file’s owner.
@@ -159,14 +159,13 @@ int MyInMemoryFS::fuseGetattr(const char *path, struct stat *statbuf) {
 
     statbuf->st_uid = getuid(); // The owner of the file/directory is the user who mounted the filesystem
     statbuf->st_gid = getgid(); // The group of the file/directory is the same as the group of the user who mounted the filesystem
-    statbuf->st_atime = time( NULL ); // The last "a"ccess of the file/directory is right now
-    statbuf->st_mtime = time( NULL ); // The last "m"odification of the file/directory is right now
+    statbuf->st_atime = time(NULL); // The last "a"ccess of the file/directory is right now
+    statbuf->st_mtime = time(NULL); // The last "m"odification of the file/directory is right now
 
-    int ret= 0;
+    int ret = 0;
     int t = findIndex(path);
 
-    if ( strcmp( path, "/" ) == 0 )
-    {
+    if (strcmp(path, "/") == 0) {
         statbuf->st_mode = S_IFDIR | 0755;
         statbuf->st_nlink = 2; // Why "two" hardlinks instead of "one"? The answer is here: http://unix.stackexchange.com/a/101536
     }
@@ -176,7 +175,7 @@ int MyInMemoryFS::fuseGetattr(const char *path, struct stat *statbuf) {
 //      statbuf->st_nlink = 1;
 //      statbuf->st_size = 1024;
 //  }
-    else if ( strcmp( path+1, allMyfiles[t].name ) == 0) {
+    else if (strcmp(path + 1, allMyfiles[t].name) == 0) {
         statbuf->st_nlink = 1;
         statbuf->st_mode = allMyfiles[t].st_mode;
         statbuf->st_size = allMyfiles[t].st_size;
@@ -185,9 +184,8 @@ int MyInMemoryFS::fuseGetattr(const char *path, struct stat *statbuf) {
         //statbuf->st_atime = allMyfiles[t].t_atime;
         //statbuf->st_mtime = allMyfiles[t].t_mtime;
         //statbuf->st_ctime = allMyfiles[t].t_ctime;
-    }
-    else {
-        ret= -ENOENT;
+    } else {
+        ret = -ENOENT;
     }
 
     /* for (int t = 0; t <= NUM_DIR_ENTRIES; t++) {
@@ -296,16 +294,15 @@ int MyInMemoryFS::fuseRead(const char *path, char *buf, size_t size, off_t offse
 
     // ... //
     if (t != -2) {
-        if(allMyfiles[t].st_size - (offset) < size){
-            memcpy( buf, allMyfiles[t].data + offset, allMyfiles[t].st_size - offset );
+        if (allMyfiles[t].st_size - (offset) < size) {
+            memcpy(buf, allMyfiles[t].data + offset, allMyfiles[t].st_size - offset);
             RETURN((int) (allMyfiles[t].st_size - offset));
         } else {
-            memcpy( buf, allMyfiles[t].data + offset, size);
+            memcpy(buf, allMyfiles[t].data + offset, size);
             offset = size;
             RETURN((int) size);
         }
-    }
-    else
+    } else
         return -ENOENT;
 }
 
@@ -324,7 +321,8 @@ int MyInMemoryFS::fuseRead(const char *path, char *buf, size_t size, off_t offse
 /// the file.
 /// \param [in] fileInfo Can be ignored in Part 1 .
 /// \return Number of bytes written on success, -ERRNO on failure.
-int MyInMemoryFS::fuseWrite(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fileInfo) {
+int
+MyInMemoryFS::fuseWrite(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fileInfo) {
     LOGM();
 
     // TODO: [PART 1] Implement this!
@@ -342,12 +340,13 @@ int MyInMemoryFS::fuseWrite(const char *path, const char *buf, size_t size, off_
             allMyfiles[i].data = (char *) realloc(allMyfiles[i].data, size + fileSize);
             memcpy(allMyfiles[i].data + offset, buf, size);
 
-        } else if ((unsigned) offset > fileSize) {                            // text hinter eigentlichem Ende der Datei angehängt
+        } else if ((unsigned) offset >
+                   fileSize) {                            // text hinter eigentlichem Ende der Datei angehängt
             allMyfiles[i].st_size = (offset + size);
             allMyfiles[i].data = (char *) realloc(allMyfiles[i].data, offset + size);
             memcpy(allMyfiles[i].data + offset, buf, size);
 
-        } else if((offset + size) < allMyfiles[i].st_size){
+        } else if ((offset + size) < allMyfiles[i].st_size) {
             memcpy(allMyfiles[i].data + offset, buf, size);
 
         } else {                // überschneidung und text geht über vorheriges Ende hinaus
@@ -432,8 +431,27 @@ int MyInMemoryFS::fuseTruncate(const char *path, off_t newSize, struct fuse_file
     LOGM();
 
     // TODO: [PART 1] Implement this!
+    int t = findIndex(path);
 
-    RETURN(0);
+    if (t != -2 && allMyfiles[t].data != NULL) {
+        if ((off_t) allMyfiles[t].st_size != newSize) {
+            char newFileData[newSize];
+            memcpy(newFileData, allMyfiles[t].data, newSize);
+            allMyfiles[t].data = NULL;
+            allMyfiles[t].st_size = newSize;
+            allMyfiles[t].data = (char *) realloc(allMyfiles[t].data, newSize);
+            memcpy(allMyfiles[t].data, newFileData, newSize);
+            LOG("Datei wurde angepasst");
+        }
+    } else if (t != -2 && allMyfiles[t].data == NULL) {
+        allMyfiles[t].st_size = newSize;
+        allMyfiles[t].data = (char *) (malloc(newSize));
+        LOG("Datei war davor NULL und wurde jetzt reserviert.");
+    } else {
+        RETURN(-ENOENT);
+    }
+
+    return 0;
 }
 
 /// @brief Read a directory.
@@ -446,23 +464,25 @@ int MyInMemoryFS::fuseTruncate(const char *path, off_t newSize, struct fuse_file
 /// \param [in] offset Can be ignored.
 /// \param [in] fileInfo Can be ignored.
 /// \return 0 on success, -ERRNO on failure.
-int MyInMemoryFS::fuseReaddir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fileInfo) {
+int MyInMemoryFS::fuseReaddir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset,
+                              struct fuse_file_info *fileInfo) {
     LOGM();
 
     // TODO: [PART 1] Implement this!
 
-    LOGF( "--> Getting The List of Files of %s\n", path );
+    LOGF("--> Getting The List of Files of %s\n", path);
 
-    filler( buf, ".", NULL, 0 ); // Current Directory
-    filler( buf, "..", NULL, 0 ); // Parent Directory
+    filler(buf, ".", NULL, 0); // Current Directory
+    filler(buf, "..", NULL, 0); // Parent Directory
 
-    if ( strcmp( path, "/" ) == 0 ) // If the user is trying to show the files/directories of the root directory show the following
+    if (strcmp(path, "/") ==
+        0) // If the user is trying to show the files/directories of the root directory show the following
     {
 //      filler( buf, "file54", NULL, 0 );
 //      filler( buf, "file349", NULL, 0 );
         for (int t = 0; t < NUM_DIR_ENTRIES; t++) {
-            if (strcmp(allMyfiles[t].name, "\0" ) != 0) {
-                filler( buf, allMyfiles[t].name, NULL, 0 );
+            if (strcmp(allMyfiles[t].name, "\0") != 0) {
+                filler(buf, allMyfiles[t].name, NULL, 0);
             }
         }
     }
@@ -475,10 +495,10 @@ int MyInMemoryFS::fuseReaddir(const char *path, void *buf, fuse_fill_dir_t fille
 /// This function is called when the file system is mounted. You may add some initializing code here.
 /// \param [in] conn Can be ignored.
 /// \return 0.
-void* MyInMemoryFS::fuseInit(struct fuse_conn_info *conn) {
+void *MyInMemoryFS::fuseInit(struct fuse_conn_info *conn) {
     // Open logfile
-    this->logFile= fopen(((MyFsInfo *) fuse_get_context()->private_data)->logFile, "w+");
-    if(this->logFile == NULL) {
+    this->logFile = fopen(((MyFsInfo *) fuse_get_context()->private_data)->logFile, "w+");
+    if (this->logFile == NULL) {
         fprintf(stderr, "ERROR: Cannot open logfile %s\n", ((MyFsInfo *) fuse_get_context()->private_data)->logFile);
     } else {
         // turn of logfile buffering
@@ -510,7 +530,7 @@ int MyInMemoryFS::findIndex(const char *path) {
     int ret = -2;
 
     for (int t = 0; t <= NUM_DIR_ENTRIES; t++) {
-        if(strcmp(path+1, allMyfiles[t].name) ==0) {
+        if (strcmp(path + 1, allMyfiles[t].name) == 0) {
             ret = t;
         }
     }
@@ -521,12 +541,12 @@ int MyInMemoryFS::findFreeSpot() {
     int ret = -ENOSPC;
 
     for (int t = 0; t < NUM_DIR_ENTRIES && t >= 0; t++) {
-        if(strcmp(allMyfiles[t].name, "\0" ) == 0) {
+        if (strcmp(allMyfiles[t].name, "\0") == 0) {
             ret = t;
-            t = NUM_DIR_ENTRIES +1;
+            t = NUM_DIR_ENTRIES + 1;
         }
     }
-    LOGF("findFreeSpot sagt: Freier Platz bei %i",ret);
+    LOGF("findFreeSpot sagt: Freier Platz bei %i", ret);
     return ret;
 }
 
@@ -536,6 +556,6 @@ int MyInMemoryFS::findFreeSpot() {
 ///
 /// Do not edit this method!
 void MyInMemoryFS::SetInstance() {
-    MyFS::_instance= new MyInMemoryFS();
+    MyFS::_instance = new MyInMemoryFS();
 }
 
