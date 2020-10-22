@@ -17,15 +17,17 @@
 class MyInMemoryFS : public MyFS {
 protected:
     // BlockDevice blockDevice;
-    MyFsFileInfo allMyfiles[NUM_DIR_ENTRIES];
 
 public:
     static MyInMemoryFS *Instance();
+    FILE *logFile;
+    MyFsFileInfo allMyfiles[NUM_DIR_ENTRIES];
 
     // TODO: [PART 1] Add attributes of your file system here
 
     MyInMemoryFS();
     ~MyInMemoryFS();
+
 
     static void SetInstance();
 

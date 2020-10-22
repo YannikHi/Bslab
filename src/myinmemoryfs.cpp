@@ -43,6 +43,8 @@
 /// You may add your own constructor code here.
 MyInMemoryFS::MyInMemoryFS() : MyFS() {
 
+
+
     // TODO: [PART 1] Add your constructor code here
 
 }
@@ -66,10 +68,20 @@ MyInMemoryFS::~MyInMemoryFS() {
 /// \return 0 on success, -ERRNO on failure.
 int MyInMemoryFS::fuseMknod(const char *path, mode_t mode, dev_t dev) {
     LOGM();
+    int ret = -ENOSPC;
+    if(findIndex(path) == -2) {
+        if(findFreeSpot() != -ENOSPC){
+            int t = findFreeSpot();
+            LOGF("mkNod sagt: Freier Platz bei %i",t);
+            strcpy(allMyfiles[t].name, path+1);
+            allMyfiles[t].st_mode = mode;
+            allMyfiles[t].t_ctime = dev;
+            //allMyfiles[t].data = NULL;
+            ret = 0;
+        }
+    }
+    return ret;
 
-    // TODO: [PART 1] Implement this!
-
-    RETURN(0);
 }
 
 /// @brief Delete a file.
@@ -81,9 +93,23 @@ int MyInMemoryFS::fuseMknod(const char *path, mode_t mode, dev_t dev) {
 int MyInMemoryFS::fuseUnlink(const char *path) {
     LOGM();
 
-    // TODO: [PART 1] Implement this!
+    // TODO: Implement this!
 
-    RETURN(0);
+    if(findIndex(path) != -2 ) {
+        int t = findIndex(path);
+        strcpy(allMyfiles[t].name,"\0");
+        allMyfiles[t].st_size = 0;
+        allMyfiles[t].st_mode = 0;
+        allMyfiles[t].data = NULL;
+        allMyfiles[t].st_uid = 0;
+        allMyfiles[t].st_gid = 0;
+        allMyfiles[t].t_atime = 0;
+        allMyfiles[t].t_ctime = 0;
+        allMyfiles[t].t_mtime = 0;
+        RETURN(0);
+    } else {
+        return(ENOENT);
+    }
 }
 
 /// @brief Rename a file.
