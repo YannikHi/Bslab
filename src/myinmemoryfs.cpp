@@ -43,9 +43,7 @@
 /// You may add your own constructor code here.
 MyInMemoryFS::MyInMemoryFS() : MyFS() {
 
-
-
-    // TODO: [PART 1] Add your constructor code here
+    // TODO: [PART 1] Add your constructor code here    --> ist in myinmemoryfs.h
 
 }
 
@@ -66,13 +64,13 @@ MyInMemoryFS::~MyInMemoryFS() {
 /// \param [in] mode Permissions for file access.
 /// \param [in] dev Can be ignored.
 /// \return 0 on success, -ERRNO on failure.
-int MyInMemoryFS::fuseMknod(const char *path, mode_t mode, dev_t dev) {
+int MyInMemoryFS::fuseMknod(const char *path, mode_t mode, dev_t dev) {     // Erstellt eine Datei
     LOGM();
     int ret = -ENOSPC;
-    if (findIndex(path) == -2) {
-        if (findFreeSpot() != -ENOSPC) {
+    if (findIndex(path) == -2) {                                            // Wenn für Datei mit dem Namen kein Eintrag im allMyFiles Array existiert
+        if (findFreeSpot() != -ENOSPC) {                                    // Wenn noch Platz für neue Dateien ist
             int t = findFreeSpot();
-            LOGF("mkNod sagt: Freier Platz bei %i", t);
+            LOGF("mkNod sagt: Freier Platz bei %i", t);                     // Log Ausgabe und dann alle Parameter eintragen.
             strcpy(allMyfiles[t].name, path + 1);
             allMyfiles[t].st_mode = mode;
             allMyfiles[t].t_ctime = dev;
@@ -90,12 +88,12 @@ int MyInMemoryFS::fuseMknod(const char *path, mode_t mode, dev_t dev) {
 /// You do not have to check file permissions, but can assume that it is always ok to access the file.
 /// \param [in] path Name of the file, starting with "/".
 /// \return 0 on success, -ERRNO on failure.
-int MyInMemoryFS::fuseUnlink(const char *path) {
+int MyInMemoryFS::fuseUnlink(const char *path) {                            // Datei löschen
     LOGM();
 
     // TODO: Implement this!
 
-    if (findIndex(path) != -2) {
+    if (findIndex(path) != -2) {                                            // Wenn es die Datei gibt wird einfach alles platt gemacht
         int t = findIndex(path);
         strcpy(allMyfiles[t].name, "\0");
         allMyfiles[t].st_size = 0;
@@ -121,7 +119,7 @@ int MyInMemoryFS::fuseUnlink(const char *path) {
 /// \param [in] path Name of the file, starting with "/".
 /// \param [in] newpath  New name of the file, starting with "/".
 /// \return 0 on success, -ERRNO on failure.
-int MyInMemoryFS::fuseRename(const char *path, const char *newpath) {
+int MyInMemoryFS::fuseRename(const char *path, const char *newpath) {       // Brauchen wir die? Tests klappen auch ohne
     LOGM();
 
     // TODO: [PART 1] Implement this!
@@ -163,7 +161,7 @@ int MyInMemoryFS::fuseGetattr(const char *path, struct stat *statbuf) {
     statbuf->st_mtime = time(NULL); // The last "m"odification of the file/directory is right now
 
     int ret = 0;
-    int t = findIndex(path);
+    int t = findIndex(path);                                                                                        // Variable t um auf richtige Datei zuzugreifen. (Ganzer Code war schon gegeben bis Zeile 176)
 
     if (strcmp(path, "/") == 0) {
         statbuf->st_mode = S_IFDIR | 0755;
@@ -175,7 +173,7 @@ int MyInMemoryFS::fuseGetattr(const char *path, struct stat *statbuf) {
 //      statbuf->st_nlink = 1;
 //      statbuf->st_size = 1024;
 //  }
-    else if (strcmp(path + 1, allMyfiles[t].name) == 0) {
+    else if (strcmp(path + 1, allMyfiles[t].name) == 0) {                   // Wenns die datei gibt... (Vergleich mit path+1 da der Path am Anfang immer ein "/" hat)
         statbuf->st_nlink = 1;
         statbuf->st_mode = allMyfiles[t].st_mode;
         statbuf->st_size = allMyfiles[t].st_size;
@@ -207,7 +205,7 @@ int MyInMemoryFS::fuseGetattr(const char *path, struct stat *statbuf) {
 /// \param [in] path Name of the file, starting with "/".
 /// \param [in] mode New mode of the file.
 /// \return 0 on success, -ERRNO on failure.
-int MyInMemoryFS::fuseChmod(const char *path, mode_t mode) {
+int MyInMemoryFS::fuseChmod(const char *path, mode_t mode) {            // änder "modus" der Datei - Easy
     LOGM();
     int t = findIndex(path);
     allMyfiles[t].st_mode = mode;
@@ -265,7 +263,7 @@ int MyInMemoryFS::fuseOpen(const char *path, struct fuse_file_info *fileInfo) {
 /// \param [in] fileInfo Can be ignored in Part 1
 /// \return The Number of bytes read on success. This may be less than size if the file does not contain sufficient bytes.
 /// -ERRNO on failure.
-int MyInMemoryFS::fuseRead(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fileInfo) {
+int MyInMemoryFS::fuseRead(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fileInfo) {       // liest aus Datei "size" bites ab stelle "offset"
     LOGM();
 
     // TODO: [PART 1] Implement this!
@@ -294,13 +292,12 @@ int MyInMemoryFS::fuseRead(const char *path, char *buf, size_t size, off_t offse
 
     // ... //
     if (t != -2) {
-        if (allMyfiles[t].st_size - (offset) < size) {
+        if (allMyfiles[t].st_size - (offset) < size) {                                              // Wenn die Anzahl bites die gelesen werden sollen länger sind als die Datei wird die größe der gelesenen Bites angepasst
             memcpy(buf, allMyfiles[t].data + offset, allMyfiles[t].st_size - offset);
-            RETURN((int) (allMyfiles[t].st_size - offset));
+            RETURN((int) (allMyfiles[t].st_size - offset));                                     // gibt anzahl gelesener Bites zurück
         } else {
-            memcpy(buf, allMyfiles[t].data + offset, size);
-            offset = size;
-            RETURN((int) size);
+            memcpy(buf, allMyfiles[t].data + offset, size);                                     // Wenn Datei groß genuf ist um alles zu lesen wird ganz normal die Size gelesen.
+            RETURN((int) size);                                                                 // gibt anzahl gelesener Bites zurück
         }
     } else
         return -ENOENT;
@@ -322,7 +319,7 @@ int MyInMemoryFS::fuseRead(const char *path, char *buf, size_t size, off_t offse
 /// \param [in] fileInfo Can be ignored in Part 1 .
 /// \return Number of bytes written on success, -ERRNO on failure.
 int
-MyInMemoryFS::fuseWrite(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fileInfo) {
+MyInMemoryFS::fuseWrite(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fileInfo) {        // Schreibt in Datei den Inhalt aus "buf" / "size" bites an stelle "offset"
     LOGM();
 
     // TODO: [PART 1] Implement this!
@@ -330,29 +327,22 @@ MyInMemoryFS::fuseWrite(const char *path, const char *buf, size_t size, off_t of
         int i = findIndex(path);
         size_t fileSize = allMyfiles[i].st_size;
 
-        if (fileSize == 0) {                                         // Datei vorher leer
-            allMyfiles[i].st_size = size;
-            allMyfiles[i].data = (char *) (malloc(offset + size));
+        if (fileSize == 0) {                                                                     // Datei vorher leer
+            allMyfiles[i].st_size = size;                                                           // Größe setzen
+            allMyfiles[i].data = (char *) (malloc(offset + size));                             // Speicher reservieren
+            memcpy(allMyfiles[i].data + offset, buf, size);                                    // Daten kopieren
+
+        } else if ((unsigned) offset == fileSize) {                                              // text genau ans Ende der Datei gehängt
+            allMyfiles[i].st_size = (fileSize + size);                                              // bereits vorhandene Größe anpassen
+            allMyfiles[i].data = (char *) realloc(allMyfiles[i].data, size + fileSize);        // Speicher anpassen (um Größe geschriebener bites also "size" ergänzen)
+            memcpy(allMyfiles[i].data + offset, buf, size);                                    // Daten kopieren
+
+        } else if ((offset + size) < allMyfiles[i].st_size) {                                    // Anfang und Ende der neu geschriebenen Daten sind im alten String -> heißt nichts muss angepasst werden
             memcpy(allMyfiles[i].data + offset, buf, size);
 
-        } else if ((unsigned) offset == fileSize) {                             // text genau ans Ende der Datei gehängt
-            allMyfiles[i].st_size = (fileSize + size);
-            allMyfiles[i].data = (char *) realloc(allMyfiles[i].data, size + fileSize);
-            memcpy(allMyfiles[i].data + offset, buf, size);
-
-        } else if ((unsigned) offset >
-                   fileSize) {                            // text hinter eigentlichem Ende der Datei angehängt
-            allMyfiles[i].st_size = (offset + size);
+        } else {                                                                                 // überschneidung und/oder text geht über vorheriges Ende hinaus
+            allMyfiles[i].st_size = (offset + size);                                                // gleich wie oben, nur wird der Speicher auf Offset + size geändert, weil offset größer als alte size
             allMyfiles[i].data = (char *) realloc(allMyfiles[i].data, offset + size);
-            memcpy(allMyfiles[i].data + offset, buf, size);
-
-        } else if ((offset + size) < allMyfiles[i].st_size) {
-            memcpy(allMyfiles[i].data + offset, buf, size);
-
-        } else {                // überschneidung und text geht über vorheriges Ende hinaus
-
-            allMyfiles[i].st_size = (offset + size);
-            allMyfiles[i].data = (char *) realloc(allMyfiles[i].data, offset + size - fileSize);
             memcpy(allMyfiles[i].data + offset, buf, size);
         }
 
@@ -361,7 +351,7 @@ MyInMemoryFS::fuseWrite(const char *path, const char *buf, size_t size, off_t of
 
         RETURN((unsigned) size);
     } else {
-        LOG("SHIT DA KLAPPT WAT NIKT");
+        LOG("SHIT DA KLAPPT WAT NIKT");                                                     // Wichtigster Part
         RETURN(-2);
     }
 
@@ -390,23 +380,23 @@ int MyInMemoryFS::fuseRelease(const char *path, struct fuse_file_info *fileInfo)
 /// \param [in] path Name of the file, starting with "/".
 /// \param [in] newSize New size of the file.
 /// \return 0 on success, -ERRNO on failure.
-int MyInMemoryFS::fuseTruncate(const char *path, off_t newSize) {
+int MyInMemoryFS::fuseTruncate(const char *path, off_t newSize) {       // passt Größe an "newSize" an, Datei kann also beschnitten, oder ohne Inhalt größer gemacht werden
     LOGM();
 
     // TODO: [PART 1] Implement this!
     int t = findIndex(path);
 
-    if (t != -2 && allMyfiles[t].data != NULL) {
-        if ((off_t) allMyfiles[t].st_size != newSize) {
-            char newFileData[newSize];
-            memcpy(newFileData, allMyfiles[t].data, newSize);
-            allMyfiles[t].data = NULL;
-            allMyfiles[t].st_size = newSize;
-            allMyfiles[t].data = (char *) realloc(allMyfiles[t].data, newSize);
-            memcpy(allMyfiles[t].data, newFileData, newSize);
+    if (t != -2 && allMyfiles[t].data != NULL) {                    // Wenn Datei existiert und nicht leer ist
+        if ((off_t) allMyfiles[t].st_size != newSize) {             // abfangen falls neue Größe = alte Größe sein sollte
+            char newFileData[newSize];                              // zum kopieren alter Daten mit angepasster Größe
+            memcpy(newFileData, allMyfiles[t].data, newSize);       // Daten werden hier abgeschnitten oder erweitert, je nachdem was größer ist
+            allMyfiles[t].data = NULL;                              // Daten mit alter Größe platt machen
+            allMyfiles[t].st_size = newSize;                        // Größe setzen
+            allMyfiles[t].data = (char *) realloc(allMyfiles[t].data, newSize); // Speicher reservieren
+            memcpy(allMyfiles[t].data, newFileData, newSize);                   // gewünschte Daten aus newFileData kopieren. fertig
             LOG("Datei wurde angepasst");
         }
-    } else if (t != -2 && allMyfiles[t].data == NULL) {
+    } else if (t != -2 && allMyfiles[t].data == NULL) {     //Wenn Datei existiert und leer ist -> Speicher reservieren -> fertig Easy
         allMyfiles[t].st_size = newSize;
         allMyfiles[t].data = (char *) (malloc(newSize));
         LOG("Datei war davor NULL und wurde jetzt reserviert.");
@@ -427,7 +417,7 @@ int MyInMemoryFS::fuseTruncate(const char *path, off_t newSize) {
 /// \param [in] newSize New size of the file.
 /// \param [in] fileInfo Can be ignored in Part 1.
 /// \return 0 on success, -ERRNO on failure.
-int MyInMemoryFS::fuseTruncate(const char *path, off_t newSize, struct fuse_file_info *fileInfo) {
+int MyInMemoryFS::fuseTruncate(const char *path, off_t newSize, struct fuse_file_info *fileInfo) { // gleiche wie bei der anderen Truncate funktion
     LOGM();
 
     // TODO: [PART 1] Implement this!
@@ -464,8 +454,7 @@ int MyInMemoryFS::fuseTruncate(const char *path, off_t newSize, struct fuse_file
 /// \param [in] offset Can be ignored.
 /// \param [in] fileInfo Can be ignored.
 /// \return 0 on success, -ERRNO on failure.
-int MyInMemoryFS::fuseReaddir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset,
-                              struct fuse_file_info *fileInfo) {
+int MyInMemoryFS::fuseReaddir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fileInfo) { // nur Schleife über ganzes allMyFiles Array
     LOGM();
 
     // TODO: [PART 1] Implement this!
@@ -526,7 +515,7 @@ void MyInMemoryFS::fuseDestroy() {
 
 // TODO: [PART 1] You may add your own additional methods here!
 
-int MyInMemoryFS::findIndex(const char *path) {
+int MyInMemoryFS::findIndex(const char *path) {                 // sucht Index von Datei in allMyFiles Array falls sie existiert
     int ret = -2;
 
     for (int t = 0; t <= NUM_DIR_ENTRIES; t++) {
@@ -537,7 +526,7 @@ int MyInMemoryFS::findIndex(const char *path) {
     return ret;
 }
 
-int MyInMemoryFS::findFreeSpot() {
+int MyInMemoryFS::findFreeSpot() {                              // prüft ob noch Platz für eine Weitere Datei ist und wenn ja an welcher Stelle.
     int ret = -ENOSPC;
 
     for (int t = 0; t < NUM_DIR_ENTRIES && t >= 0; t++) {
