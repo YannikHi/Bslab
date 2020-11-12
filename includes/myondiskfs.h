@@ -15,6 +15,10 @@ protected:
 
 public:
     static MyOnDiskFS *Instance();
+    FILE *logFile;
+    SuperBlock FsName[NUM_DIR_ENTRIES];
+    root Fsroot[NUM_DIR_ENTRIES];
+    DMAP dmap[BLOCK_SIZE*DMAP_SIZE];
 
     // TODO: [PART 1] Add attributes of your file system here
 
@@ -42,7 +46,8 @@ public:
     virtual void fuseDestroy();
 
     // TODO: Add methods of your file system here
-
+    int findIndex(const char *path);
+    int findFreeSpot();
 };
 
 #endif //MYFS_MYONDISKFS_H
