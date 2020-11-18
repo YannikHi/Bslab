@@ -18,6 +18,7 @@
 #include <string.h>
 #include <errno.h>
 
+
 #include "macros.h"
 #include "myfs.h"
 #include "myfs-info.h"
@@ -31,6 +32,9 @@ MyOnDiskFS::MyOnDiskFS() : MyFS() {
     // create a block device object
     this->blockDevice= new BlockDevice(BLOCK_SIZE);
 
+    //SuperBlock->superblock[0] = "MeinKleinerStick";
+    //Data->data[0] = "lol";
+    //LOGF("DateiSystem heißt %i", Fat->index[0]);
 
     // TODO: [PART 2] Add your constructor code here
 }
@@ -261,8 +265,8 @@ int MyOnDiskFS::fuseRead(const char *path, char *buf, size_t size, off_t offset,
     //TEST TEIL 2
     char puffer[BLOCK_SIZE];
     char data[BLOCK_SIZE];
-    this->blockDevice->read(1,puffer);
-    memcpy(data,puffer,sizeof(puffer));
+    this->blockDevice->read(DMAP_START,data);
+    //memcpy(data,SuperBlock->superblock[0],sizeof(puffer));
     LOGF("Hier se Data: %s",data);
     //TEST TEIL 2
 
@@ -324,7 +328,7 @@ int MyOnDiskFS::fuseWrite(const char *path, const char *buf, size_t size, off_t 
     //TEST TEIL 2
     char puffer[BLOCK_SIZE];
     memcpy(puffer,buf,BLOCK_SIZE);
-    this->blockDevice->write(1,puffer);
+    //this->blockDevice->write(1,puffer);
     //TEST TEIL 2
 
     // TODO: [PART 1] Implement this!
@@ -510,6 +514,8 @@ void* MyOnDiskFS::fuseInit(struct fuse_conn_info *conn) {
 
             // TODO: [PART 2] Read existing structures form file
 
+
+
         } else if(ret == -ENOENT) {
             LOG("Container file does not exist, creating a new one");
 
@@ -518,6 +524,24 @@ void* MyOnDiskFS::fuseInit(struct fuse_conn_info *conn) {
             if (ret >= 0) {
 
                 // TODO: [PART 2] Create empty structures in file
+
+                int blockNumber = 0;
+                while(blockNumber<= ROOT_END){
+                    char data[BLOCK_SIZE*8];
+                    int i = 0;
+                    while( i <= sizeof(data) ){
+                        data[i] = 0;
+                        i++;
+                    }
+                    blockDevice->write(blockNumber,data);
+                    blockNumber++;
+                }
+
+
+                SuperBlock->superblock[0] = "MeinKleinerStick";
+                char puffer[BLOCK_SIZE];
+                memcpy(puffer,SuperBlock->superblock[0],BLOCK_SIZE);
+                blockDevice->write(0,puffer);
 
             }
         }
