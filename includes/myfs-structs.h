@@ -18,21 +18,24 @@
 #define SB_SIZE 1
 #define DMAP_START 1
 #define DMAP_SIZE 16
+#define DMAP_END 16
 #define FAT_START 17
-#define FAT_SIZE 236
-#define ROOT_START 253
+#define FAT_SIZE 256
+#define FAT_END 272
+#define ROOT_START 273
 #define ROOT_SIZE 64
-#define DATA_START 317
+#define ROOT_END 336
+#define DATA_START 337
 #define DATA_SIZE 60000
 
 // TODO: Add structures of your file system here
 
-struct SuperBlock{
-    char FSName[BLOCK_SIZE];
+struct SUPERBLOCK{
+    char* superblock[BLOCK_SIZE];
 };
 
 struct DMAP{
-    int index[BLOCK_SIZE*DMAP_SIZE];
+    char* index[BLOCK_SIZE*DMAP_SIZE];
 };
 
 struct FAT{
@@ -52,7 +55,7 @@ struct file{
 struct root{
     char name[NAME_LENGTH +1]{};
     size_t st_size;
-    char * data;
+    char* data;
     uid_t st_uid;
     gid_t st_gid;
     mode_t st_mode;
@@ -71,8 +74,8 @@ struct root{
     }
 };
 
-struct Data{
-    char *data;
+struct DATA{
+    char* data[BLOCK_SIZE];
 };
 
 
