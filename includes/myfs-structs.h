@@ -42,9 +42,10 @@ struct FAT{
     int index[BLOCK_SIZE*FAT_SIZE];
 };
 
-struct file{
+struct roodi{
     char name[NAME_LENGTH +1]{};
-    size_t st_size;
+    unsigned int st_size;
+    char* data;
     int firstBlockIndex;
     uid_t st_uid;
     gid_t st_gid;

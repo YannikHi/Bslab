@@ -17,7 +17,7 @@ public:
     static MyOnDiskFS *Instance();
     FILE *logFile;
     SUPERBLOCK SuperBlock[NUM_DIR_ENTRIES];
-    root Fsroot[NUM_DIR_ENTRIES];
+    roodi Fsroot[NUM_DIR_ENTRIES];
     DMAP dmap[BLOCK_SIZE*DMAP_SIZE];
     FAT Fat[FAT_SIZE];
     DATA Data[DATA_SIZE];

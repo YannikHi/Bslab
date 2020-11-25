@@ -263,11 +263,11 @@ int MyOnDiskFS::fuseRead(const char *path, char *buf, size_t size, off_t offset,
     LOGM();
 
     //TEST TEIL 2
-    char puffer[BLOCK_SIZE];
-    char data[BLOCK_SIZE];
-    this->blockDevice->read(DMAP_START,data);
+    //char puffer[BLOCK_SIZE];
+    //char data[BLOCK_SIZE];
+    //this->blockDevice->read(DMAP_START,data);
     //memcpy(data,SuperBlock->superblock[0],sizeof(puffer));
-    LOGF("Hier se Data: %s",data);
+    //LOGF("Hier se Data: %s",data);
     //TEST TEIL 2
 
     // TODO: [PART 1] Implement this!
@@ -514,6 +514,19 @@ void* MyOnDiskFS::fuseInit(struct fuse_conn_info *conn) {
 
             // TODO: [PART 2] Read existing structures form file
 
+            // READ SUPEERBLOCK
+            char data[BLOCK_SIZE];
+            this->blockDevice->read(SB_START,data);
+            LOG("CONTAINER FILE GEFUNDEN!");
+            LOGF("Container Name: %s",data);
+
+            //READ ROOT
+            this->blockDevice->read(ROOT_START,data);
+            LOG("ROOT ABSCHNITT GEFUNDEN!");
+            LOGF("INHALT: %s",data);
+
+
+
 
 
         } else if(ret == -ENOENT) {
@@ -537,11 +550,31 @@ void* MyOnDiskFS::fuseInit(struct fuse_conn_info *conn) {
                     blockNumber++;
                 }
 
-
+                // INIT SUPERBLOCK
                 SuperBlock->superblock[0] = "MeinKleinerStick";
                 char puffer[BLOCK_SIZE];
                 memcpy(puffer,SuperBlock->superblock[0],BLOCK_SIZE);
-                blockDevice->write(0,puffer);
+                blockDevice->write(SB_START,puffer);
+
+                //INIT DMAP
+
+                //INIT FAT
+
+                //INIT ROOT
+                char Fname[NAME_LENGTH +1] = "FileOne";
+
+                memcpy(Fsroot[0].name,Fname,strlen(Fname));
+                Fsroot[0].st_size = 7;
+
+                LOGF("name: %s", Fsroot[0].name);
+                LOGF("size: %d", Fsroot[0].st_size);
+
+                char * writepuffer = new char[BLOCK_SIZE];
+                memcpy(writepuffer,&Fsroot[0],sizeof(roodi));
+
+                blockDevice->write(ROOT_START, writepuffer);
+
+                //INIT DATA
 
             }
         }
